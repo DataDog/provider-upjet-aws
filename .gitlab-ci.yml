@@ -1,5 +1,5 @@
 default:
-  tags: ["arch:amd64"]
+  tags: ["docker-in-docker:amd64"]
   image: registry.ddbuild.io/images/nydus:v2.3.7
 
 variables:
