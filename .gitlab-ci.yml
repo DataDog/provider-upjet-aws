@@ -36,6 +36,7 @@ build_fips:
       export PATH=$PATH:/usr/local/go/bin
       VERSION="$CI_COMMIT_TAG"
       REG="registry.ddbuild.io"
+      SUBPACKAGES="config s3 iam"
 
       echo "Building provider-upjet-aws:${VERSION}"
       echo "Registry: ${REG}"
@@ -64,4 +65,11 @@ build_fips:
       XPKG_REG_ORGS_NO_PROMOTE="" \
       XPKG_REG_ORGS="$REG" \
       VERSION="$VERSION" \
-      make build.all publish BRANCH_NAME=main SUBPACKAGES="config s3 iam"
+      make build.all publish BRANCH_NAME=main SUBPACKAGES="${SUBPACKAGES}"
+
+      # Sign each published image
+      for SUBPKG in ${SUBPACKAGES}; do
+        IMAGE_REPO="provider-upjet-aws-${SUBPKG}:${VERSION}"
+        DIGEST=$(crane digest ${REG}/${IMAGE_REPO})
+        ddsign sign ${REG}/${IMAGE_REPO}@${DIGEST}
+      done
