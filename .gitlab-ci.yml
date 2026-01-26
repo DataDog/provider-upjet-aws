@@ -69,7 +69,11 @@ build_fips:
 
       # Sign each published image
       for SUBPKG in ${SUBPACKAGES}; do
-        IMAGE_REPO="provider-upjet-aws-${SUBPKG}:${VERSION}"
-        DIGEST=$(crane digest ${REG}/${IMAGE_REPO})
-        ddsign sign ${REG}/${IMAGE_REPO}@${DIGEST}
+        if [ "$SUBPKG" = "config" ]; then
+          IMAGE_NAME="provider-family-aws"
+        else
+          IMAGE_NAME="provider-aws-${SUBPKG}"
+        fi
+        DIGEST=$(crane digest ${REG}/${IMAGE_NAME}:${VERSION})
+        ddsign sign ${REG}/${IMAGE_NAME}:${VERSION}@${DIGEST}
       done
