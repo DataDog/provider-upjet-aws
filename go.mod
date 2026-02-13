@@ -4,7 +4,7 @@
 
 module github.com/upbound/provider-aws/v2
 
-go 1.24.10
+go 1.25.7
 
 tool golang.org/x/tools/cmd/goimports
 
