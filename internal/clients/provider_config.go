@@ -19,7 +19,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 	stscredstypesv2 "github.com/aws/aws-sdk-go-v2/service/sts/types"
 	"github.com/aws/smithy-go/middleware"
-	"github.com/go-ini/ini"
+	"gopkg.in/ini.v1"
 	"github.com/pkg/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
