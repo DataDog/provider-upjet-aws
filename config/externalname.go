@@ -1176,8 +1176,8 @@ var TerraformPluginSDKExternalNameConfigs = map[string]config.ExternalName{
 	"aws_ecs_cluster": config.TemplatedStringAsIdentifier("name", fullARNTemplate("ecs", "cluster/{{ .external_name }}")),
 	// ECS cluster capacity providers can be imported using the cluster_name attribute
 	"aws_ecs_cluster_capacity_providers": config.IdentifierFromProvider,
-	//
-	"aws_ecs_service": config.NameAsIdentifier,
+	// arn:aws:ecs:us-west-1:153891904029:service/example/sample-service
+	"aws_ecs_service": config.TemplatedStringAsIdentifier("name", fullARNTemplate("ecs", "service/{{ .parameters.cluster }}/{{ .external_name }}")),
 	// Imported using ARN that has a random substring, revision at the end:
 	// arn:aws:ecs:us-east-1:012345678910:task-definition/mytaskfamily:123
 	"aws_ecs_task_definition": config.IdentifierFromProvider,
@@ -1944,6 +1944,12 @@ var TerraformPluginSDKExternalNameConfigs = map[string]config.ExternalName{
 	// aws_networkmanager_vpc_attachment can be imported using the attachment ID
 	"aws_networkmanager_vpc_attachment": config.IdentifierFromProvider,
 
+	// oam
+	//
+	// aws_oam_sink can be imported using th ARN
+	// Example: arn:aws:oam:us-west-2:123456789012:sink/sink-id
+	"aws_oam_sink": config.IdentifierFromProvider,
+
 	// opensearch
 	//
 	// NOTE(sergen): Parameter as identifier cannot be used, because terraform
@@ -2184,6 +2190,8 @@ var TerraformPluginSDKExternalNameConfigs = map[string]config.ExternalName{
 	//
 	// Route 53 Resolver configs can be imported using the Route 53 Resolver config ID
 	"aws_route53_resolver_config": config.IdentifierFromProvider,
+	//  Route 53 Resolver DNSSEC configs can be imported using the Route 53 Resolver DNSSEC config ID: rdsc-be1866ecc1683e95
+	"aws_route53_resolver_dnssec_config": config.IdentifierFromProvider,
 	// rslvr-in-abcdef01234567890
 	"aws_route53_resolver_endpoint": config.IdentifierFromProvider,
 	// rslvr-rr-0123456789abcdef0

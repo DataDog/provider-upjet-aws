@@ -686,6 +686,7 @@ import (
 	transitgatewayconnectpeerassociation "github.com/upbound/provider-aws/v2/internal/controller/namespaced/networkmanager/transitgatewayconnectpeerassociation"
 	transitgatewayregistration "github.com/upbound/provider-aws/v2/internal/controller/namespaced/networkmanager/transitgatewayregistration"
 	vpcattachment "github.com/upbound/provider-aws/v2/internal/controller/namespaced/networkmanager/vpcattachment"
+	sink "github.com/upbound/provider-aws/v2/internal/controller/namespaced/oam/sink"
 	domainopensearch "github.com/upbound/provider-aws/v2/internal/controller/namespaced/opensearch/domain"
 	domainpolicyopensearch "github.com/upbound/provider-aws/v2/internal/controller/namespaced/opensearch/domainpolicy"
 	domainsamloptionsopensearch "github.com/upbound/provider-aws/v2/internal/controller/namespaced/opensearch/domainsamloptions"
@@ -776,6 +777,7 @@ import (
 	readinesscheck "github.com/upbound/provider-aws/v2/internal/controller/namespaced/route53recoveryreadiness/readinesscheck"
 	recoverygroup "github.com/upbound/provider-aws/v2/internal/controller/namespaced/route53recoveryreadiness/recoverygroup"
 	resourceset "github.com/upbound/provider-aws/v2/internal/controller/namespaced/route53recoveryreadiness/resourceset"
+	dnssecconfig "github.com/upbound/provider-aws/v2/internal/controller/namespaced/route53resolver/dnssecconfig"
 	endpointroute53resolver "github.com/upbound/provider-aws/v2/internal/controller/namespaced/route53resolver/endpoint"
 	ruleroute53resolver "github.com/upbound/provider-aws/v2/internal/controller/namespaced/route53resolver/rule"
 	ruleassociation "github.com/upbound/provider-aws/v2/internal/controller/namespaced/route53resolver/ruleassociation"
@@ -1671,6 +1673,7 @@ func Setup_monolith(mgr ctrl.Manager, o controller.Options) error {
 		transitgatewayconnectpeerassociation.Setup,
 		transitgatewayregistration.Setup,
 		vpcattachment.Setup,
+		sink.Setup,
 		domainopensearch.Setup,
 		domainpolicyopensearch.Setup,
 		domainsamloptionsopensearch.Setup,
@@ -1761,6 +1764,7 @@ func Setup_monolith(mgr ctrl.Manager, o controller.Options) error {
 		readinesscheck.Setup,
 		recoverygroup.Setup,
 		resourceset.Setup,
+		dnssecconfig.Setup,
 		endpointroute53resolver.Setup,
 		ruleroute53resolver.Setup,
 		ruleassociation.Setup,
@@ -2662,6 +2666,7 @@ func SetupGated_monolith(mgr ctrl.Manager, o controller.Options) error {
 		transitgatewayconnectpeerassociation.SetupGated,
 		transitgatewayregistration.SetupGated,
 		vpcattachment.SetupGated,
+		sink.SetupGated,
 		domainopensearch.SetupGated,
 		domainpolicyopensearch.SetupGated,
 		domainsamloptionsopensearch.SetupGated,
@@ -2752,6 +2757,7 @@ func SetupGated_monolith(mgr ctrl.Manager, o controller.Options) error {
 		readinesscheck.SetupGated,
 		recoverygroup.SetupGated,
 		resourceset.SetupGated,
+		dnssecconfig.SetupGated,
 		endpointroute53resolver.SetupGated,
 		ruleroute53resolver.SetupGated,
 		ruleassociation.SetupGated,
