@@ -21,7 +21,7 @@ build_fips:
   rules:
     - if: $CI_COMMIT_TAG
   before_script:
-    - apt-get update && apt-get install -y make git wget python3
+    - apt-get update && apt-get install -y make git wget
     - git config --global url."https://oauth2:${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
     - wget https://go.dev/dl/go1.27.3.linux-amd64.tar.gz
     - tar -C /usr/local -xzf go1.27.3.linux-amd64.tar.gz
@@ -64,7 +64,7 @@ build_fips:
       EOF
 
       # Build using existing make system with FIPS
-      BUILD_ARGS="--file /tmp/Dockerfile.fips" \
+      BUILD_ARGS="--file /tmp/Dockerfile.fips --label target=staging" \
       XPKG_REG_ORGS_NO_PROMOTE="" \
       XPKG_REG_ORGS="$REG" \
       REGISTRY_ORGS="$REG" \
@@ -72,104 +72,13 @@ build_fips:
       VERSION="$VERSION" \
       make build.all publish BRANCH_NAME=main SUBPACKAGES="${SUBPACKAGES}"
 
-      # Annotate final package indexes, then sign only verified immutable digests.
-      for TOOL in python3 crane ddsign; do
-        command -v "$TOOL"
-      done
+      # Sign each published image
       for SUBPKG in ${SUBPACKAGES}; do
         if [ "$SUBPKG" = "config" ]; then
           IMAGE_NAME="provider-family-aws"
         else
           IMAGE_NAME="provider-aws-${SUBPKG}"
         fi
-        python3 - "${REG}/${IMAGE_NAME}" "$VERSION" <<'PACKAGE_INDEX_PY'
-      import hashlib
-      import json
-      import re
-      import subprocess
-      import sys
-
-      OCI_INDEX = "application/vnd.oci.image.index.v1+json"
-      DIGEST = re.compile(r"sha256:[a-f0-9]{64}")
-      MEDIA_TYPE = re.compile(r"[A-Za-z0-9!#$%&'*+.^_`|~-]+/[A-Za-z0-9!#$%&'*+.^_`|~-]+")
-
-      def crane(*args, input=None):
-          return subprocess.run(["crane", *args], input=input, check=True,
-                                stdout=subprocess.PIPE).stdout
-
-      def valid_digest(value):
-          return isinstance(value, str) and DIGEST.fullmatch(value) is not None
-
-      def resolve_tag(tagged):
-          digest = crane("digest", tagged).decode().strip()
-          if not valid_digest(digest):
-              raise ValueError("Registry did not return a sha256 index digest")
-          return digest
-
-      def unique_object(pairs):
-          result = {}
-          for key, value in pairs:
-              if key in result:
-                  raise ValueError("Duplicate JSON key in package index")
-              result[key] = value
-          return result
-
-      def reject_constant(value):
-          raise ValueError("Invalid JSON constant: " + value)
-
-      def read_index(raw):
-          index = json.loads(raw, object_pairs_hook=unique_object, parse_constant=reject_constant)
-          if (not isinstance(index, dict) or type(index.get("schemaVersion")) is not int
-                  or index["schemaVersion"] != 2 or index.get("mediaType") != OCI_INDEX):
-              raise ValueError("Expected a schemaVersion 2 OCI package index")
-          children = index.get("manifests")
-          if not isinstance(children, list):
-              raise ValueError("Expected an index manifests array")
-          annotations = index.get("annotations", {})
-          if not isinstance(annotations, dict) or not all(
-                  isinstance(key, str) and isinstance(value, str) and "\0" not in key + value
-                  for key, value in annotations.items()):
-              raise ValueError("Invalid index annotations")
-          platforms = set()
-          for child in children:
-              if not isinstance(child, dict):
-                  raise ValueError("Invalid package child descriptor")
-              media_type = child.get("mediaType")
-              if (not valid_digest(child.get("digest"))
-                      or type(child.get("size")) is not int or child["size"] < 0
-                      or not isinstance(media_type, str) or MEDIA_TYPE.fullmatch(media_type) is None):
-                  raise ValueError("Invalid package child descriptor")
-              # Keep Docker/package-specific media types and all descriptor metadata opaque.
-              if "platform" in child:
-                  platform = child["platform"]
-                  if not isinstance(platform, dict) or not all(
-                          isinstance(platform.get(key), str) and platform[key]
-                          for key in ("os", "architecture")):
-                      raise ValueError("Invalid package child platform")
-                  platforms.add((platform["os"], platform["architecture"]))
-          if not {("linux", "amd64"), ("linux", "arm64")} <= platforms:
-              raise ValueError("Package index must retain linux/amd64 and linux/arm64")
-          return index
-
-      try:
-          repository, version = sys.argv[1:]
-          tagged = repository + ":" + version
-          original = repository + "@" + resolve_tag(tagged)
-          amended = read_index(crane("manifest", original))
-          amended.setdefault("annotations", {})["target"] = "staging"
-          # Submit these exact bytes; keep the manifest in memory, with no temp files.
-          raw = (json.dumps(amended, separators=(",", ":"), allow_nan=False) + "\n").encode()
-          expected_digest = "sha256:" + hashlib.sha256(raw).hexdigest()
-          crane("edit", "manifest", original, "--tag", tagged, "--media-type", OCI_INDEX, input=raw)
-          if resolve_tag(tagged) != expected_digest:
-              raise ValueError("Versioned tag does not match the exact annotated index bytes")
-          immutable = repository + "@" + expected_digest
-          if read_index(crane("manifest", immutable)) != amended:
-              raise ValueError("Final index changed annotations, children or package metadata")
-          if resolve_tag(tagged) != expected_digest:
-              raise ValueError("Versioned tag drifted before signing")
-          subprocess.run(["ddsign", "sign", immutable], check=True)
-      except (ValueError, OSError, subprocess.CalledProcessError) as error:
-          sys.exit(str(error))
-      PACKAGE_INDEX_PY
+        DIGEST=$(crane digest "${REG}/${IMAGE_NAME}:${VERSION}")
+        ddsign sign "${REG}/${IMAGE_NAME}:${VERSION}@${DIGEST}"
       done
