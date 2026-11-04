@@ -3,7 +3,7 @@ default:
   image: registry.ddbuild.io/images/nydus:v2.3.7
 
 variables:
-  BASE_IMAGE: "registry.ddbuild.io/images/base/gbi-distroless-nossl-root-fips:release"
+  BASE_IMAGE: "registry.ddbuild.io/images/base/gbi-distroless-root:release"
 
 stages:
   - build
