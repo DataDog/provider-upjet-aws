@@ -64,7 +64,7 @@ build_fips:
       EOF
 
       # Build using existing make system with FIPS
-      BUILD_ARGS="--file /tmp/Dockerfile.fips" \
+      BUILD_ARGS="--file /tmp/Dockerfile.fips --label target=staging" \
       XPKG_REG_ORGS_NO_PROMOTE="" \
       XPKG_REG_ORGS="$REG" \
       REGISTRY_ORGS="$REG" \
