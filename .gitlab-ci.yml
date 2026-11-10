@@ -8,7 +8,7 @@ variables:
 stages:
   - build
 
-build_fips:
+build_provider:
   stage: build
   variables:
     KUBERNETES_CPU_REQUEST: "8"
@@ -45,8 +45,8 @@ build_fips:
       echo "Registry: ${REG}"
       echo "Base image: ${BASE_IMAGE}"
 
-      # Create custom Dockerfile with FIPS support
-      cat > /tmp/Dockerfile.fips << EOF
+      # Create custom provider Dockerfile
+      cat > /tmp/Dockerfile.provider << EOF
       FROM ${BASE_IMAGE}
 
       ARG TARGETOS
@@ -63,8 +63,8 @@ build_fips:
       ENTRYPOINT ["provider"]
       EOF
 
-      # Build using existing make system with FIPS
-      BUILD_ARGS="--file /tmp/Dockerfile.fips --label target=staging" \
+      # Build using existing make system
+      BUILD_ARGS="--file /tmp/Dockerfile.provider --label target=staging" \
       XPKG_REG_ORGS_NO_PROMOTE="" \
       XPKG_REG_ORGS="$REG" \
       REGISTRY_ORGS="$REG" \
