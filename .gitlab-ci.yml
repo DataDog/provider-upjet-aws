@@ -6,7 +6,46 @@ variables:
   BASE_IMAGE: "registry.ddbuild.io/images/base/gbi-distroless-root:release"
 
 stages:
+  - sync
   - build
+
+# Run from the gitlab branch: the checkout provides the config and the CI overlay.
+# Requires a repo-scoped dd-octo-sts policy and GITHUB_ACTOR/GITHUB_EMAIL CI variables.
+sync_upstream_chaser:
+  stage: sync
+  image: registry.ddbuild.io/upstream-chaser:v0.6.5@sha256:12bf8eb273ff6068f710529a3d6a0cec780eaa8d3d45799262c9481982b0a06a
+  tags: ["arch:arm64"]
+  variables:
+    GIT_STRATEGY: fetch
+  id_tokens:
+    DDOCTOSTS_ID_TOKEN:
+      aud: dd-octo-sts
+  before_script:
+    - |
+      : "${DDOCTOSTS_POLICY:?Set a repo-scoped dd-octo-sts policy}"
+      : "${GITHUB_ACTOR:?Set the bot username}"
+      : "${GITHUB_EMAIL:?Set the bot email}"
+      dd-octo-sts token --scope DataDog --policy "${DDOCTOSTS_POLICY}" > /tmp/gh_token.txt
+      export GITHUB_TOKEN="$(cat /tmp/gh_token.txt)"
+      git config --global user.name "${GITHUB_ACTOR}"
+      git config --global user.email "${GITHUB_EMAIL}"
+      git config --global url."https://${GITHUB_ACTOR}:${GITHUB_TOKEN}@github.com/DataDog".insteadOf "https://github.com/DataDog"
+  script:
+    - |
+      if [ "${UPSTREAM_CHASER_DRY_RUN:-false}" = "true" ]; then
+        upstream-chaser sync --config "${CI_PROJECT_DIR}/upstream-chaser.yaml" --dry-run
+      else
+        upstream-chaser sync --config "${CI_PROJECT_DIR}/upstream-chaser.yaml"
+      fi
+  after_script:
+    - |
+      if [ -s /tmp/gh_token.txt ]; then
+        dd-octo-sts revoke -t "$(cat /tmp/gh_token.txt)"
+      fi
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "gitlab" && $CI_PIPELINE_SOURCE == "schedule" && $TARGET_JOB == "sync-upstream-chaser"'
+    - if: '$CI_COMMIT_BRANCH == "gitlab" && $CI_PIPELINE_SOURCE == "web"'
+      when: manual
 
 build_provider:
   stage: build
