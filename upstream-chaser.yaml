@@ -1,0 +1,14 @@
+upstream: https://github.com/crossplane-contrib/provider-upjet-aws
+repo: https://github.com/DataDog/provider-upjet-aws.git
+tagLimit: 3
+tagMatchers:
+  - "v2.4.*"
+excludePreReleases: true
+branchTemplate: "{{ .Tag }}-dd"
+syncHead: true
+fileFolders:
+  - files
+overlayPaths:
+  files:
+    - .gitlab-ci.yml
+release: true
